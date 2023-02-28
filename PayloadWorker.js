@@ -37,42 +37,82 @@ try {
                 "content-type": "application/json",
             }
 
-            to.forEach(async (arrayItem) => {
+            if (typeof to[0] === 'object' && to[0] !== null) {
 
-                let data = arrayItem
+                to.forEach(async (arrayItem) => {
 
-                for (i in data) {
-                    data['field_' + i] = data[i]
-                    delete data[i]
-                }
+                    let data = arrayItem
 
-                try {
-                    const resp = await axios({
-                        method: 'post',
-                        url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
-                        headers: voiceApiHeaders,
-                        data: data,
-                    })
-
-                    const myQueue = new Queue(voiceQueue.events, {
-                        connection: redisConnection
-                    })
-                    
-                    async function addJobs() {
-                        await myQueue.add('call', resp.data)
+                    for (i in data) {
+                        data['field_' + i] = data[i]
+                        delete data[i]
                     }
-                
-                    addJobs()
 
-                } catch (err) {
-                    console.log("Error: " + err)
-                }
-            })
+                    try {
+                        const resp = await axios({
+                            method: 'post',
+                            url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
+                            headers: voiceApiHeaders,
+                            data: data,
+                        })
+
+                        const myQueue = new Queue(voiceQueue.events, {
+                            connection: redisConnection
+                        })
+
+                        async function addJobs() {
+                            await myQueue.add('call', resp.data)
+                        }
+
+                        addJobs()
+
+                    } catch (err) {
+                        console.log("Error: " + err)
+                    }
+
+                })
+                //         else {
+
+                //             try {
+                //                 const resp = await axios({
+                //                     method: 'post',
+                //                     url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
+                //                     headers: voiceApiHeaders,
+                //                     data: { "field_0"},
+                //                 })
+                //             }
+                //     }
+                // }
+            }
+            else {
+                to.forEach(async (arrayItem) => {
+                    try {
+                        const resp = await axios({
+                            method: 'post',
+                            url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
+                            headers: voiceApiHeaders,
+                            data: { "field_0": arrayItem },
+                        })
+
+                        const myQueue = new Queue(voiceQueue.events, {
+                            connection: redisConnection
+                        })
+
+                        async function addJobs() {
+                            await myQueue.add('call', resp.data)
+                        }
+
+                        addJobs()
+
+                    } catch (err) {
+                        console.log("Error: " + err)
+                    }
+                })
+            }
         },
         // Setting the concurrency level
         { concurrency: 5 },
     )
-
     // Catching Error
 } catch (err) {
     console.log('Error', err)
