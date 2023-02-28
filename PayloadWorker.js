@@ -44,17 +44,25 @@ try {
                     let data = arrayItem
 
                     for (i in data) {
+
                         data['field_' + i] = data[i]
                         delete data[i]
                     }
-
                     try {
-                        const resp = await axios({
+
+                        let resp = await axios({
                             method: 'post',
                             url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
                             headers: voiceApiHeaders,
                             data: data,
                         })
+
+                        const mapKey = `REQMAP:voice:${resp.data.id}`
+                        const value = { requestid, id: resp.data.id, apikey, number: data.field_0 }
+                        await redis.set(mapKey, JSON.stringify(value), 'ex', DefaultTTL)
+
+                        const numKey = `REQM:${apikey}:${requestid}:${data.field_0}`
+                        await redis.set(numKey, JSON.stringify(resp.data), 'ex', DefaultTTL)
 
                         const myQueue = new Queue(voiceQueue.events, {
                             connection: redisConnection
@@ -71,28 +79,26 @@ try {
                     }
 
                 })
-                //         else {
-
-                //             try {
-                //                 const resp = await axios({
-                //                     method: 'post',
-                //                     url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
-                //                     headers: voiceApiHeaders,
-                //                     data: { "field_0"},
-                //                 })
-                //             }
-                //     }
-                // }
             }
             else {
+
                 to.forEach(async (arrayItem) => {
+
                     try {
+
                         const resp = await axios({
                             method: 'post',
                             url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
                             headers: voiceApiHeaders,
                             data: { "field_0": arrayItem },
                         })
+
+                        const mapKey = `REQMAP:voice:${resp.data.id}`
+                        const value = { requestid, id: resp.data.id, apikey, number: arrayItem }
+                        await redis.set(mapKey, JSON.stringify(value), 'ex', DefaultTTL)
+
+                        const numKey = `REQM:${apikey}:${requestid}:${arrayItem}`
+                        await redis.set(numKey, JSON.stringify(resp.data), 'ex', DefaultTTL)
 
                         const myQueue = new Queue(voiceQueue.events, {
                             connection: redisConnection
