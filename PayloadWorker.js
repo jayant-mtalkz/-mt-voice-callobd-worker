@@ -3,7 +3,7 @@ const Redis = require('ioredis')
 
 const { Queue, Worker } = require('bullmq')
 
-const { voiceUrls, voiceQueue, responses, DefaultTTL } = require('./data')
+const { voiceUrls, voiceQueue, responses, DefaultTTL } = require('./config/data')
 
 const { redisConnection } = require('./config/redisConfig')
 
@@ -12,28 +12,29 @@ try {
     // Creating redis connection
 
     const redis = new Redis(redisConnection)
+    redis.on('error',(err) => {
+        console.log("Can't connect to redis")
+    })
 
-    // Creating voice-callpatch-tatatele worker
+    // Creating voice-callobd-tatatele worker
 
     const worker = new Worker(
-        voiceQueue.callobd,
+        voiceQueue.voice_obd_tatatele,
         async (job) => {
 
-            //console.log(job.data);
-            console.log(`Consumed data from ${voiceQueue.callobd} queue`)
+            //console.log(job.data)
+            console.log(`Consumed data from ${voiceQueue.voice_obd_tatatele} queue`)
             console.log(job.data)
 
             const { requestid, apikey } = job.data
 
             const { campaign, to, integration } = job.data.data
 
-            const { token } = integration.params
-
-            const url = voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign
+            const url = voiceUrls.MTALKZ_VOICE_OBD_API + campaign
 
             const voiceApiHeaders = {
                 "accept": "application/json",
-                "Authorization": token,
+                "Authorization": integration.params.token,
                 "content-type": "application/json",
             }
 
@@ -50,9 +51,9 @@ try {
                     }
                     try {
 
-                        let resp = await axios({
+                        const resp = await axios({
                             method: 'post',
-                            url: voiceUrls.MTALKZ_VOICE_CALLOBD_API + campaign,
+                            url: voiceUrls.MTALKZ_VOICE_OBD_API + campaign,
                             headers: voiceApiHeaders,
                             data: data,
                         })
@@ -64,7 +65,7 @@ try {
                         const numKey = `REQM:${apikey}:${requestid}:${data.field_0}`
                         await redis.set(numKey, JSON.stringify(resp.data), 'ex', DefaultTTL)
 
-                        const myQueue = new Queue(voiceQueue.events, {
+                        const myQueue = new Queue(voiceQueue.events_voice_obd_tatatele, {
                             connection: redisConnection
                         })
 
@@ -75,7 +76,7 @@ try {
                         addJobs()
 
                     } catch (err) {
-                        console.log("Error: " + err)
+                        console.log("Error##: " + err)
                     }
 
                 })
