@@ -136,7 +136,7 @@ try {
                             ts: Date.now(),
                             event: 'relayed',
                             requestid,
-                            number: data.field_0,
+                            number: arrayItem,
                             campaign,
                             provider: voiceQueue.voice_obd_tatatele
                         }
