@@ -26,11 +26,22 @@ try {
             console.log(`Consumed data from ${voiceQueue.voice_obd_tatatele} queue`)
             console.log(job.data)
 
-            const { requestid, apikey } = job.data
+            const { ivr_id } = job.data.data
+
+            if(ivr_id === null || ivr_id === undefined){
+                const key = `REQMAP:${apikey}:${requestid}`
+                const result = {
+                    "status": "error",
+                    "message": "IVR ID not specified"
+                }
+
+                await redis.set(key, JSON.stringify(result), 'ex', DefaultTTL)
+                throw new Error("IVR ID not specified")
+            }
 
             const { campaign, to, integration } = job.data.data
 
-            const url = voiceUrls.MTALKZ_VOICE_OBD_API + campaign
+            const { requestid, apikey } = job.data
 
             const voiceApiHeaders = {
                 "accept": "application/json",
