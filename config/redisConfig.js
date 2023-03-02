@@ -1,4 +1,4 @@
-// Creating a redis connection
+// Redis configuration
 
 const redisConnection = {
     host: '127.0.0.1',

@@ -20,21 +20,16 @@ try {
         const db = await mongoConn.db(dbName)
         const collection = await db.collection(colName)
 
-        if (eventData.event === 'relayed') {
-            const mongoData = {
-                apikey: eventData.apikey,
-                number: eventData.number,
-                requestid: eventData.requestid,
-                campaign: eventData.campaign,
-                provider: eventData.provider,
-                relayed: eventData.ts,
-            }
-            
-            collection.insertOne(mongoData)
-        }
+        let updatedEvent = {}
+        updatedEvent[eventData.event] = eventData.ts
+        
+        collection.updateOne(
+            { "apikey": eventData.apikey, "number": eventData.number, "requestid": eventData.requestid },
+            { '$set': updatedEvent })
+
+        // collection.insertOne(mongoData)
 
     })
 } catch (err) {
     console.log('Error', err)
 }
-
