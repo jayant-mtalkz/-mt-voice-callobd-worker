@@ -1,9 +1,11 @@
 const axios = require('axios')
 const Redis = require('ioredis')
+const { MongoClient } = require('mongodb')
 
 const { Queue, Worker } = require('bullmq')
 
 const { voiceUrls, voiceQueue, responses, DefaultTTL } = require('./config/data')
+const { url, dbName, colName } = require('./config/mongoConfig')
 
 const { redisConnection } = require('./config/redisConfig')
 
@@ -16,14 +18,20 @@ try {
         console.log("Can't connect to redis")
     })
 
+    // Creating mongo connection
+
+    const mongoConn = new MongoClient(url)
+    mongoConn.connect()
+
+
     // Creating voice-callobd-tatatele worker
 
     const worker = new Worker(
-        voiceQueue.voice_obd_tatatele,
+        voiceQueue.voiceObdTatatele,
         async (job) => {
 
             //console.log(job.data)
-            console.log(`Consumed data from ${voiceQueue.voice_obd_tatatele} queue`)
+            console.log(`Consumed data from ${voiceQueue.voiceObdTatatele} queue`)
             console.log(job.data)
 
             const { ivr_id } = job.data.data
@@ -69,38 +77,52 @@ try {
                             data: data,
                         })
 
-                        // const mapKey = `REQMAP:voice:${resp.data.id}`
-                        // const value = { requestid, id: resp.data.id, apikey, number: data.field_0 }
-                        // await redis.set(mapKey, JSON.stringify(value), 'ex', DefaultTTL)
+                        const ivrKey = `REQMAP:${data.field_0}:${ivr_id}`
+                        const ivrValue = { requestid, apikey, }
+                        await redis.set(ivrKey, JSON.stringify(ivrValue), 'ex', DefaultTTL)
 
                         const numKey = `REQM:${apikey}:${requestid}:${data.field_0}`
-                        const value = { requestid, number: data.field_0, status: "relayed" }
-                        await redis.set(numKey, JSON.stringify(value), 'ex', DefaultTTL)
+                        const numValue = { requestid, number: data.field_0, status: "relayed" }
+                        await redis.set(numKey, JSON.stringify(numValue), 'ex', DefaultTTL)
 
-                        const myQueue = new Queue(voiceQueue.events_voice_obd_tatatele, {
+                        const myQueue = new Queue(voiceQueue.eventsVoiceObdTatatele, {
                             connection: redisConnection
                         })
 
                         const eventQueuePayload = {
-                            prefix: 'MTKZ',
+                            prefix: dbName,
                             apikey,
                             ts: Date.now(),
                             event: 'relayed',
                             requestid,
                             number: data.field_0,
                             campaign,
-                            provider: voiceQueue.voice_obd_tatatele
+                            provider: voiceQueue.voiceObdTatatele
                         }
+
+                        // addJobs()
+                        await myQueue.add(requestid, eventQueuePayload)
+
+                        const db = await mongoConn.db(dbName)
+                        const collection = await db.collection(colName)
+
+                        const mongoData = {
+                            apikey,
+                            number: data.field_0,
+                            requestid,
+                            campaign,
+                            provider: voiceQueue.voiceObdTatatele,
+                            relayed: eventQueuePayload.ts,
+                        }
+
+                        collection.insertOne(mongoData)
 
                         // async function addJobs() {
                         //     await myQueue.add(requestid, eventQueuePayload)
                         // }
 
-                        // addJobs()
-                        await myQueue.add(requestid, eventQueuePayload)
-
                     } catch (err) {
-                        console.log("Error##: " + err)
+                        console.log("Error: " + err)
                     }
 
                 })
@@ -118,27 +140,27 @@ try {
                             data: { "field_0": arrayItem },
                         })
 
-                        // const mapKey = `REQMAP:voice:${resp.data.id}`
-                        // const value = { requestid, id: resp.data.id, apikey, number: arrayItem }
-                        // await redis.set(mapKey, JSON.stringify(value), 'ex', DefaultTTL)
+                        const ivrKey = `REQMAP:${arrayItem}:${ivr_id}`
+                        const ivrValue = { requestid, apikey, }
+                        await redis.set(ivrKey, JSON.stringify(ivrValue), 'ex', DefaultTTL)
 
-                        const numKey = `REQM:${apikey}:${requestid}:${data.field_0}`
-                        const value = { requestid, number: data.field_0, status: "relayed" }
-                        await redis.set(numKey, JSON.stringify(value), 'ex', DefaultTTL)
+                        const numKey = `REQM:${apikey}:${requestid}:${arrayItem}`
+                        const numValue = { requestid, number: data.field_0, status: "relayed" }
+                        await redis.set(numKey, JSON.stringify(numValue), 'ex', DefaultTTL)
 
-                        const myQueue = new Queue(voiceQueue.events, {
+                        const myQueue = new Queue(voiceQueue.eventsVoiceObdTatatele, {
                             connection: redisConnection
                         })
 
                         const eventQueuePayload = {
-                            prefix: 'MTKZ',
+                            prefix: dbName,
                             apikey,
                             ts: Date.now(),
                             event: 'relayed',
                             requestid,
                             number: arrayItem,
                             campaign,
-                            provider: voiceQueue.voice_obd_tatatele
+                            provider: voiceQueue.voiceObdTatatele
                         }
 
                         // async function addJobs() {
@@ -147,6 +169,17 @@ try {
 
                         // addJobs()
                         await myQueue.add(requestid, eventQueuePayload)
+
+                        const mongoData = {
+                            apikey,
+                            number: arrayItem,
+                            requestid,
+                            campaign,
+                            provider: voiceQueue.voiceObdTatatele,
+                            relayed: eventQueuePayload.ts,
+                        }
+
+                        collection.insertOne(mongoData)
 
                     } catch (err) {
                         console.log("Error: " + err)

@@ -3,8 +3,8 @@ const voiceUrls = {
 }
 
 const voiceQueue = {
-    voice_obd_tatatele: "voice-obd-tatatele",
-    events_voice_obd_tatatele: "events-voice-obd-tatatele",
+    voiceObdTatatele: "voice-obd-tatatele",
+    eventsVoiceObdTatatele: "events-voice-obd-tatatele",
 }
 
 const DefaultTTL = 7 * 24 * 60 * 60

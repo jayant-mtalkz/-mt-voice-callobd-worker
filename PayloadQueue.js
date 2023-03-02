@@ -54,7 +54,7 @@ const stringQueuePayload = {
 
 try {
     // Creating queue
-    const myQueue = new Queue(voiceQueue.voice_obd_tatatele, {
+    const myQueue = new Queue(voiceQueue.voiceObdTatatele, {
         connection: redisConnection
     })
 
@@ -67,5 +67,5 @@ try {
     // console.log(`Payload added to queue: ${voiceQueue.callpatch}`)
 
 } catch (err) {
-    console.log(`Error Creating ${voiceQueue.voice_obd_tatatele} :`, err)
+    console.log(`Error Creating ${voiceQueue.voiceObdTatatele} :`, err)
 }
