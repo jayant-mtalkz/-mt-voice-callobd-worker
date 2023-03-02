@@ -5,7 +5,7 @@ const { MongoClient } = require('mongodb')
 const { Queue, Worker } = require('bullmq')
 
 const { voiceUrls, voiceQueue, responses, DefaultTTL } = require('./config/data')
-const { url, dbName, colName } = require('./config/mongoConfig')
+const { dbName } = require('./config/mongoConfig')
 
 const { redisConnection } = require('./config/redisConfig')
 
@@ -17,12 +17,6 @@ try {
     redis.on('error', (err) => {
         console.log("Can't connect to redis")
     })
-
-    // Creating mongo connection
-
-    const mongoConn = new MongoClient(url)
-    mongoConn.connect()
-
 
     // Creating voice-callobd-tatatele worker
 
@@ -103,20 +97,6 @@ try {
                         // addJobs()
                         await myQueue.add(requestid, eventQueuePayload)
 
-                        const db = await mongoConn.db(dbName)
-                        const collection = await db.collection(colName)
-
-                        const mongoData = {
-                            apikey,
-                            number: data.field_0,
-                            requestid,
-                            campaign,
-                            provider: voiceQueue.voiceObdTatatele,
-                            relayed: eventQueuePayload.ts,
-                        }
-
-                        collection.insertOne(mongoData)
-
                         // async function addJobs() {
                         //     await myQueue.add(requestid, eventQueuePayload)
                         // }
@@ -169,17 +149,6 @@ try {
 
                         // addJobs()
                         await myQueue.add(requestid, eventQueuePayload)
-
-                        const mongoData = {
-                            apikey,
-                            number: arrayItem,
-                            requestid,
-                            campaign,
-                            provider: voiceQueue.voiceObdTatatele,
-                            relayed: eventQueuePayload.ts,
-                        }
-
-                        collection.insertOne(mongoData)
 
                     } catch (err) {
                         console.log("Error: " + err)
