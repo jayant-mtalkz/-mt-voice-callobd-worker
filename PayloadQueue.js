@@ -9,7 +9,7 @@ const objectQueuePayload = {
     "requestid": "o7JhmTZYzvoiheY",
     "apikey": "70Gopn5Rv8yFChQm",
     "data": {
-        "campaign": "211843",
+        "campaign": "212987",
         "ivr_id": "46433",
         "to": [
             {
@@ -35,7 +35,7 @@ const stringQueuePayload = {
     "requestid": "o7JhmTZYzvoiheY",
     "apikey": "70Gopn5Rv8yFChQm",
     "data": {
-        "campaign": "211843",
+        "campaign": "212987",
         "ivr_id": "46433",
         "to": [
             "918821848295",
@@ -59,8 +59,8 @@ try {
     })
 
     async function addJobs() {
-        await myQueue.add('callObject', objectQueuePayload)
-        // await myQueue.add('callString', stringQueuePayload)
+        await myQueue.add('callObject', JSON.stringify(objectQueuePayload))
+        // await myQueue.add('callString', JSON.stringify(stringQueuePayload))
     }
 
     addJobs()
